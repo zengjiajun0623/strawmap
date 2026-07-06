@@ -1,0 +1,624 @@
+{
+  "scenario": {
+    "id": "adversarial-finality",
+    "name": "Availability without finality",
+    "seed": "lean-devnet-adversarial-0",
+    "assertions": {
+      "proofVerified": true,
+      "dependencyGraphValid": true,
+      "finalHead": null,
+      "minPrivateFrames": 1,
+      "includesStateClasses": [
+        "keyed-nonce",
+        "temp"
+      ],
+      "maxTotalFee": 700
+    }
+  },
+  "validation": {
+    "ok": true,
+    "errors": []
+  },
+  "workstreams": [
+    {
+      "id": "recursive-starks",
+      "name": "Recursive STARK verification",
+      "objective": "Replace re-execution with chained proof verification.",
+      "artifact": "recursive proof aggregator",
+      "readiness": "prototype"
+    },
+    {
+      "id": "quantum-safety",
+      "name": "Quantum-safe replacements",
+      "objective": "Model hash-based commitments for keys, blobs, and validator messages.",
+      "artifact": "hash commitment adapter",
+      "readiness": "prototype"
+    },
+    {
+      "id": "lean-consensus",
+      "name": "Lean consensus",
+      "objective": "Simulate decoupled availability and finality with one-round finality targets.",
+      "artifact": "availability/finality simulator",
+      "readiness": "prototype"
+    },
+    {
+      "id": "multidimensional-gas",
+      "name": "Multidimensional gas",
+      "objective": "Price execution, state, bandwidth, proof, and privacy resources separately.",
+      "artifact": "resource vector fee engine",
+      "readiness": "prototype"
+    },
+    {
+      "id": "scalable-state",
+      "name": "Scalable state types",
+      "objective": "Route dynamic state, UTXO state, ring buffers, keyed nonces, and temporary state.",
+      "artifact": "state classifier and commitment model",
+      "readiness": "prototype"
+    },
+    {
+      "id": "privacy-flow",
+      "name": "Privacy-friendly transaction flow",
+      "objective": "Carry shielded payloads through mempool and frames without exposing secrets.",
+      "artifact": "private frame envelope",
+      "readiness": "prototype"
+    },
+    {
+      "id": "client-architecture",
+      "name": "Client architecture changes",
+      "objective": "Split execution, state serving, proof, and finality responsibilities.",
+      "artifact": "pipeline orchestrator",
+      "readiness": "prototype"
+    },
+    {
+      "id": "vm-isa",
+      "name": "VM/ISA evolution",
+      "objective": "Expose a proof-friendly instruction layer below the EVM.",
+      "artifact": "leanISA micro-interpreter",
+      "readiness": "prototype"
+    }
+  ],
+  "dependencies": [
+    {
+      "from": "quantum-safety",
+      "to": "privacy-flow",
+      "reason": "Private frames must commit to hidden payloads with post-quantum-safe primitives."
+    },
+    {
+      "from": "quantum-safety",
+      "to": "recursive-starks",
+      "reason": "Proof and blob commitments should avoid quantum-vulnerable assumptions."
+    },
+    {
+      "from": "scalable-state",
+      "to": "multidimensional-gas",
+      "reason": "Different state classes need separate resource accounting before pricing works."
+    },
+    {
+      "from": "privacy-flow",
+      "to": "multidimensional-gas",
+      "reason": "Private transactions add proof, bandwidth, and privacy-specific resource costs."
+    },
+    {
+      "from": "vm-isa",
+      "to": "recursive-starks",
+      "reason": "A proof-friendly instruction trace becomes a public input to recursive verification."
+    },
+    {
+      "from": "multidimensional-gas",
+      "to": "client-architecture",
+      "reason": "Clients need resource-vector admission, execution, and accounting boundaries."
+    },
+    {
+      "from": "scalable-state",
+      "to": "client-architecture",
+      "reason": "State custody and serving responsibilities depend on the state type model."
+    },
+    {
+      "from": "recursive-starks",
+      "to": "lean-consensus",
+      "reason": "Consensus can finalize proof-backed block summaries instead of replaying everything."
+    },
+    {
+      "from": "client-architecture",
+      "to": "lean-consensus",
+      "reason": "Availability, proving, state serving, and finality need explicit client role boundaries."
+    }
+  ],
+  "readinessGates": [
+    {
+      "id": "g1-public-inputs",
+      "workstream": "recursive-starks",
+      "gate": "Block public inputs include tx root, state root, VM trace root, and parent proof hash.",
+      "evidence": "proveExecution() and verifyProof()"
+    },
+    {
+      "id": "g2-pq-commitments",
+      "workstream": "quantum-safety",
+      "gate": "Addresses and commitments use hash-based placeholder adapters.",
+      "evidence": "quantumSafeAddress() and quantumSafeCommitment()"
+    },
+    {
+      "id": "g3-decoupled-finality",
+      "workstream": "lean-consensus",
+      "gate": "Availability and finality are measured separately under quorum assumptions.",
+      "evidence": "simulateLeanConsensus()"
+    },
+    {
+      "id": "g4-resource-vector",
+      "workstream": "multidimensional-gas",
+      "gate": "Transactions produce compute, state, bandwidth, proof, and privacy resource vectors.",
+      "evidence": "estimateGasVector() and priceGas()"
+    },
+    {
+      "id": "g5-state-routing",
+      "workstream": "scalable-state",
+      "gate": "Dynamic, UTXO, ring-buffer, keyed-nonce, static, and temporary state are classifiable.",
+      "evidence": "classifyStateAccess() and assignStateCustody()"
+    },
+    {
+      "id": "g6-private-envelope",
+      "workstream": "privacy-flow",
+      "gate": "Private mempool-visible envelopes omit secrets and expose commitments/nullifiers.",
+      "evidence": "createPrivateFrame()"
+    },
+    {
+      "id": "g7-client-pipeline",
+      "workstream": "client-architecture",
+      "gate": "A full transaction path flows through state, gas, privacy, VM, proof, custody, and finality.",
+      "evidence": "runOneShotProgram()"
+    },
+    {
+      "id": "g8-isa-trace",
+      "workstream": "vm-isa",
+      "gate": "A proof-friendly instruction trace produces a deterministic trace root.",
+      "evidence": "executeLeanISA()"
+    }
+  ],
+  "dependencyGraph": {
+    "ok": true,
+    "missing": [],
+    "cycles": [],
+    "order": [
+      "quantum-safety",
+      "privacy-flow",
+      "scalable-state",
+      "multidimensional-gas",
+      "client-architecture",
+      "vm-isa",
+      "recursive-starks",
+      "lean-consensus"
+    ]
+  },
+  "implementationMatrix": [
+    {
+      "id": "quantum-safety",
+      "name": "Quantum-safe replacements",
+      "objective": "Model hash-based commitments for keys, blobs, and validator messages.",
+      "artifact": "hash commitment adapter",
+      "readiness": "prototype",
+      "gates": [
+        {
+          "id": "g2-pq-commitments",
+          "workstream": "quantum-safety",
+          "gate": "Addresses and commitments use hash-based placeholder adapters.",
+          "evidence": "quantumSafeAddress() and quantumSafeCommitment()"
+        }
+      ],
+      "upstream": [],
+      "downstream": [
+        "privacy-flow",
+        "recursive-starks"
+      ],
+      "executionOrder": 0
+    },
+    {
+      "id": "privacy-flow",
+      "name": "Privacy-friendly transaction flow",
+      "objective": "Carry shielded payloads through mempool and frames without exposing secrets.",
+      "artifact": "private frame envelope",
+      "readiness": "prototype",
+      "gates": [
+        {
+          "id": "g6-private-envelope",
+          "workstream": "privacy-flow",
+          "gate": "Private mempool-visible envelopes omit secrets and expose commitments/nullifiers.",
+          "evidence": "createPrivateFrame()"
+        }
+      ],
+      "upstream": [
+        "quantum-safety"
+      ],
+      "downstream": [
+        "multidimensional-gas"
+      ],
+      "executionOrder": 1
+    },
+    {
+      "id": "scalable-state",
+      "name": "Scalable state types",
+      "objective": "Route dynamic state, UTXO state, ring buffers, keyed nonces, and temporary state.",
+      "artifact": "state classifier and commitment model",
+      "readiness": "prototype",
+      "gates": [
+        {
+          "id": "g5-state-routing",
+          "workstream": "scalable-state",
+          "gate": "Dynamic, UTXO, ring-buffer, keyed-nonce, static, and temporary state are classifiable.",
+          "evidence": "classifyStateAccess() and assignStateCustody()"
+        }
+      ],
+      "upstream": [],
+      "downstream": [
+        "multidimensional-gas",
+        "client-architecture"
+      ],
+      "executionOrder": 2
+    },
+    {
+      "id": "multidimensional-gas",
+      "name": "Multidimensional gas",
+      "objective": "Price execution, state, bandwidth, proof, and privacy resources separately.",
+      "artifact": "resource vector fee engine",
+      "readiness": "prototype",
+      "gates": [
+        {
+          "id": "g4-resource-vector",
+          "workstream": "multidimensional-gas",
+          "gate": "Transactions produce compute, state, bandwidth, proof, and privacy resource vectors.",
+          "evidence": "estimateGasVector() and priceGas()"
+        }
+      ],
+      "upstream": [
+        "scalable-state",
+        "privacy-flow"
+      ],
+      "downstream": [
+        "client-architecture"
+      ],
+      "executionOrder": 3
+    },
+    {
+      "id": "client-architecture",
+      "name": "Client architecture changes",
+      "objective": "Split execution, state serving, proof, and finality responsibilities.",
+      "artifact": "pipeline orchestrator",
+      "readiness": "prototype",
+      "gates": [
+        {
+          "id": "g7-client-pipeline",
+          "workstream": "client-architecture",
+          "gate": "A full transaction path flows through state, gas, privacy, VM, proof, custody, and finality.",
+          "evidence": "runOneShotProgram()"
+        }
+      ],
+      "upstream": [
+        "multidimensional-gas",
+        "scalable-state"
+      ],
+      "downstream": [
+        "lean-consensus"
+      ],
+      "executionOrder": 4
+    },
+    {
+      "id": "vm-isa",
+      "name": "VM/ISA evolution",
+      "objective": "Expose a proof-friendly instruction layer below the EVM.",
+      "artifact": "leanISA micro-interpreter",
+      "readiness": "prototype",
+      "gates": [
+        {
+          "id": "g8-isa-trace",
+          "workstream": "vm-isa",
+          "gate": "A proof-friendly instruction trace produces a deterministic trace root.",
+          "evidence": "executeLeanISA()"
+        }
+      ],
+      "upstream": [],
+      "downstream": [
+        "recursive-starks"
+      ],
+      "executionOrder": 5
+    },
+    {
+      "id": "recursive-starks",
+      "name": "Recursive STARK verification",
+      "objective": "Replace re-execution with chained proof verification.",
+      "artifact": "recursive proof aggregator",
+      "readiness": "prototype",
+      "gates": [
+        {
+          "id": "g1-public-inputs",
+          "workstream": "recursive-starks",
+          "gate": "Block public inputs include tx root, state root, VM trace root, and parent proof hash.",
+          "evidence": "proveExecution() and verifyProof()"
+        }
+      ],
+      "upstream": [
+        "quantum-safety",
+        "vm-isa"
+      ],
+      "downstream": [
+        "lean-consensus"
+      ],
+      "executionOrder": 6
+    },
+    {
+      "id": "lean-consensus",
+      "name": "Lean consensus",
+      "objective": "Simulate decoupled availability and finality with one-round finality targets.",
+      "artifact": "availability/finality simulator",
+      "readiness": "prototype",
+      "gates": [
+        {
+          "id": "g3-decoupled-finality",
+          "workstream": "lean-consensus",
+          "gate": "Availability and finality are measured separately under quorum assumptions.",
+          "evidence": "simulateLeanConsensus()"
+        }
+      ],
+      "upstream": [
+        "recursive-starks",
+        "client-architecture"
+      ],
+      "downstream": [],
+      "executionOrder": 7
+    }
+  ],
+  "transactions": [
+    {
+      "id": "keyed-nonce-transfer",
+      "from": "dora",
+      "to": "erin",
+      "nonce": 11,
+      "private": false,
+      "requiresProof": true,
+      "stateAccess": {
+        "keyedNonce": true
+      },
+      "compute": 12,
+      "reads": 1,
+      "writes": 1
+    },
+    {
+      "id": "temporary-privacy-session",
+      "from": "frank",
+      "nonce": 12,
+      "private": true,
+      "requiresProof": true,
+      "stateAccess": {
+        "scope": "temporary"
+      },
+      "compute": 20,
+      "reads": 1,
+      "writes": 3
+    }
+  ],
+  "frames": [
+    {
+      "kind": "public-frame",
+      "visible": {
+        "compute": 12,
+        "from": "dora",
+        "id": "keyed-nonce-transfer",
+        "nonce": 11,
+        "private": false,
+        "reads": 1,
+        "requiresProof": true,
+        "stateAccess": {
+          "keyedNonce": true
+        },
+        "to": "erin",
+        "writes": 1
+      },
+      "commitment": {
+        "scheme": "sha256-hash-commitment-v0",
+        "domain": "public-frame",
+        "commitment": "97d98c25fec759d3816b27ccfb317a5d4a6ea812bbccff1a0bf0709150477851"
+      }
+    },
+    {
+      "kind": "private-frame",
+      "visible": {
+        "from": "pq_39d1d00db92ceaf2f5703b4a",
+        "to": "shielded-pool",
+        "stateClass": "temp",
+        "nullifier": "32c4469ad097fb324d457bf0",
+        "resourceVector": {
+          "compute": 20,
+          "stateRead": 1,
+          "stateWrite": 1,
+          "bandwidth": 2,
+          "proof": 22,
+          "privacy": 18
+        }
+      },
+      "commitment": {
+        "scheme": "sha256-hash-commitment-v0",
+        "domain": "private-frame",
+        "commitment": "50e16b8b8adac56c71392f5ad90a578447e853f6fab7d0af8ba0c28ab1f7ee49"
+      }
+    }
+  ],
+  "gas": [
+    {
+      "id": "keyed-nonce-transfer",
+      "stateClass": "keyed-nonce",
+      "vector": {
+        "compute": 12,
+        "stateRead": 1,
+        "stateWrite": 1,
+        "bandwidth": 2,
+        "proof": 22,
+        "privacy": 0
+      },
+      "fee": 146
+    },
+    {
+      "id": "temporary-privacy-session",
+      "stateClass": "temp",
+      "vector": {
+        "compute": 20,
+        "stateRead": 1,
+        "stateWrite": 1,
+        "bandwidth": 2,
+        "proof": 22,
+        "privacy": 18
+      },
+      "fee": 280
+    }
+  ],
+  "isa": {
+    "stack": [],
+    "memory": {
+      "blockGas": 0,
+      "devnetSeed": "34afd1deabdce398c510bed5",
+      "accountedGas": 426
+    },
+    "traceRoot": "47d331c16b005694b389b1c9ef45bfc3051129e3b43bb82741ff5b3a1bc5e2a6"
+  },
+  "block": {
+    "id": "slot-1",
+    "number": 1,
+    "transactions": [
+      {
+        "compute": 12,
+        "from": "dora",
+        "id": "keyed-nonce-transfer",
+        "nonce": 11,
+        "private": false,
+        "reads": 1,
+        "requiresProof": true,
+        "stateAccess": {
+          "keyedNonce": true
+        },
+        "to": "erin",
+        "writes": 1
+      },
+      {
+        "from": "pq_39d1d00db92ceaf2f5703b4a",
+        "to": "shielded-pool",
+        "stateClass": "temp",
+        "nullifier": "32c4469ad097fb324d457bf0",
+        "resourceVector": {
+          "compute": 20,
+          "stateRead": 1,
+          "stateWrite": 1,
+          "bandwidth": 2,
+          "proof": 22,
+          "privacy": 18
+        }
+      }
+    ],
+    "stateRoot": "6d39f6e4720e75767207f9ee18b25183e39d2fb3dbb1969e591124b8f556acff"
+  },
+  "proof": {
+    "proofSystem": "recursive-stark-placeholder-v0",
+    "publicInputs": {
+      "blockNumber": 1,
+      "txRoot": "711d837922b7d7de7a9f7f545b941f197e0b23ccaa96a449207da4b8e5cab3cc",
+      "stateRoot": "6d39f6e4720e75767207f9ee18b25183e39d2fb3dbb1969e591124b8f556acff",
+      "vmTraceRoot": "47d331c16b005694b389b1c9ef45bfc3051129e3b43bb82741ff5b3a1bc5e2a6",
+      "parentProof": null
+    },
+    "proofHash": "38c440bf63de2a3b66e016b54e7cc41b289a7cb6687397732047bbf914c0c101"
+  },
+  "proofVerified": true,
+  "consensus": {
+    "quorum": 0.67,
+    "finalized": [
+      {
+        "blockId": "slot-1",
+        "available": true,
+        "final": false,
+        "availabilityRatio": 1,
+        "finalityRatio": 0.4
+      }
+    ],
+    "head": null
+  },
+  "custody": [
+    {
+      "stateId": "keyed-nonce-transfer",
+      "class": "keyed-nonce",
+      "custodians": [
+        "lighthouse-pq",
+        "reth-proof"
+      ]
+    },
+    {
+      "stateId": "temporary-privacy-session",
+      "class": "temp",
+      "custodians": [
+        "lighthouse-pq",
+        "nimbus-pq"
+      ]
+    }
+  ],
+  "summary": {
+    "totalFee": 426,
+    "finalHead": null,
+    "privateFrames": 1,
+    "stateClasses": [
+      "keyed-nonce",
+      "temp"
+    ],
+    "dependencyGraphValid": true,
+    "readinessGateCount": 8
+  },
+  "assertions": {
+    "ok": true,
+    "checks": [
+      {
+        "id": "proofVerified",
+        "pass": true,
+        "actual": true,
+        "expected": true
+      },
+      {
+        "id": "dependencyGraphValid",
+        "pass": true,
+        "actual": true,
+        "expected": true
+      },
+      {
+        "id": "finalHead",
+        "pass": true,
+        "actual": null,
+        "expected": null
+      },
+      {
+        "id": "minPrivateFrames",
+        "pass": true,
+        "actual": 1,
+        "expected": ">= 1"
+      },
+      {
+        "id": "maxTotalFee",
+        "pass": true,
+        "actual": 426,
+        "expected": "<= 700"
+      },
+      {
+        "id": "includesStateClass:keyed-nonce",
+        "pass": true,
+        "actual": [
+          "keyed-nonce",
+          "temp"
+        ],
+        "expected": "keyed-nonce"
+      },
+      {
+        "id": "includesStateClass:temp",
+        "pass": true,
+        "actual": [
+          "keyed-nonce",
+          "temp"
+        ],
+        "expected": "temp"
+      }
+    ],
+    "failures": []
+  },
+  "ok": true
+}

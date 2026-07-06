@@ -6,6 +6,8 @@
   "private": false,
   "scripts": {
     "inspect": "node bin/inspect.mjs",
+    "report": "node bin/report.mjs",
+    "report:check": "node bin/report.mjs --check",
     "simulate": "node bin/simulate.mjs",
     "spec": "node bin/spec.mjs",
     "test": "node --test"

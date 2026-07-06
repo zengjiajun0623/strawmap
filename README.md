@@ -26,7 +26,9 @@ Runnable artifacts:
 - `bin/simulate.mjs`: simulation CLI
 - `bin/inspect.mjs`: dependency graph and implementation matrix CLI
 - `bin/spec.mjs`: executable scenario spec runner
+- `bin/report.mjs`: scenario report generator
 - `scenarios/*.json`: named devnet scenarios and expected assertions
+- `reports/`: generated Markdown and JSON reports for each scenario
 - `test/lean-lab.test.mjs`: test vectors for the prototype
 - `docs/one-shot-devnet.md`: research/devnet implementation plan
 - `.github/workflows/test.yml`: public CI for tests and executable specs
@@ -62,9 +64,11 @@ npm test
 npm run simulate
 npm run inspect
 npm run spec
+npm run report
 ```
 
 Use `npm run spec -- --full` to print full scenario reports.
+Use `npm run report:check` to verify committed reports are current.
 
 ## Deploy
 

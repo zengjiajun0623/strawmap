@@ -53,6 +53,7 @@ npm test
 npm run simulate
 npm run inspect
 npm run spec
+npm run report
 ```
 
 The simulation emits a JSON report with workstreams, private/public frames, gas
@@ -67,6 +68,10 @@ portable devnet fixture: validator set, transaction mix, quorum, custody
 replicas, and expected assertions. Add a scenario when a roadmap claim needs a
 named test case that contributors can inspect and extend. Use
 `npm run spec -- --full` when you need the full report for every scenario.
+
+The report command writes `reports/*.md` and `reports/*.json` from the same
+scenario specs. CI runs `npm run report:check` so checked-in reports cannot drift
+from the executable scenarios.
 
 ## Devnet principle
 

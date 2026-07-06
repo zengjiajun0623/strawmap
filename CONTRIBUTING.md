@@ -27,4 +27,5 @@ npm test
 npm run simulate
 npm run inspect
 npm run spec
+npm run report:check
 ```
