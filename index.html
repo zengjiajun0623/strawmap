@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lean Ethereum Strawmap</title>
+    <meta
+      name="description"
+      content="An interactive Lean Ethereum strawmap inspired by Ethereum's updated L1 roadmap and Vitalik Buterin's July 2026 notes."
+    >
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="https://strawmap.org/" aria-label="Original strawmap">
+        <span class="eth-mark" aria-hidden="true"></span>
+        <span>lean.strawmap</span>
+      </a>
+      <div class="header-meta">
+        <span>updated from Vitalik's Jul 4, 2026 thread</span>
+        <a href="https://x.com/VitalikButerin/status/2073459000398463446">source post</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero-panel" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <p class="kicker">Ethereum's third major iteration</p>
+          <h1 id="page-title">Lean Ethereum as a living protocol map.</h1>
+          <p>
+            A one-screen upgrade that reframes the L1 strawmap around recursive STARKs,
+            quantum safety, privacy, new state types, and faster consensus.
+          </p>
+        </div>
+        <div class="north-stars" aria-label="Roadmap north stars">
+          <button class="star-card" data-star="fast-l1">fast L1<span>seconds to inclusion and finality</span></button>
+          <button class="star-card" data-star="gigagas-l1">gigagas L1<span>real-time proving at scale</span></button>
+          <button class="star-card" data-star="teragas-l2">teragas L2<span>DAS and blob growth</span></button>
+          <button class="star-card" data-star="post-quantum-l1">post quantum L1<span>hash-based cryptography</span></button>
+          <button class="star-card" data-star="private-l1">private L1<span>shielded transfers by default</span></button>
+        </div>
+      </section>
+
+      <section class="control-strip" aria-label="Roadmap controls">
+        <label class="search-box">
+          <span>Search</span>
+          <input id="searchInput" type="search" placeholder="state, STARK, privacy..." autocomplete="off">
+        </label>
+
+        <div class="segment-group" aria-label="Filter by theme">
+          <button class="segment active" data-filter="all" type="button">All</button>
+          <button class="segment" data-filter="lean" type="button">Lean</button>
+          <button class="segment" data-filter="privacy" type="button">Privacy</button>
+          <button class="segment" data-filter="quantum" type="button">Quantum</button>
+          <button class="segment" data-filter="state" type="button">State</button>
+          <button class="segment" data-filter="scale" type="button">Scale</button>
+        </div>
+      </section>
+
+      <section class="workspace" aria-label="Interactive roadmap">
+        <aside class="detail-panel" aria-live="polite">
+          <p class="panel-eyebrow">Selected upgrade</p>
+          <h2 id="detailTitle">Recursive STARK verification</h2>
+          <p id="detailBody">
+            Verification moves from direct re-execution toward recursive proofs as an
+            enshrined first-class protocol component.
+          </p>
+          <dl class="detail-facts">
+            <div>
+              <dt>Layer</dt>
+              <dd id="detailLayer">Cross-layer</dd>
+            </div>
+            <div>
+              <dt>Fork window</dt>
+              <dd id="detailFork">I* to L*</dd>
+            </div>
+            <div>
+              <dt>Why it matters</dt>
+              <dd id="detailImpact">Simpler verification, real-time proving, and future VM flexibility.</dd>
+            </div>
+          </dl>
+        </aside>
+
+        <div class="map-shell">
+          <div class="map-topbar">
+            <div>
+              <strong>Fork timeline</strong>
+              <span>Glamsterdam through north stars</span>
+            </div>
+            <button id="resetButton" class="utility-button" type="button">Reset view</button>
+          </div>
+
+          <div class="roadmap-wrap" id="roadmapWrap">
+            <div class="roadmap" id="roadmap" role="application" aria-label="Lean Ethereum strawmap">
+              <svg class="dependency-layer" id="dependencyLayer" aria-hidden="true"></svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="takeaways" aria-labelledby="takeaways-title">
+        <h2 id="takeaways-title">Lean priorities</h2>
+        <article>
+          <h3>No one-shot fork</h3>
+          <p>Lean Ethereum is a three-to-four-year sequence, not a single switch.</p>
+        </article>
+        <article>
+          <h3>Privacy by design</h3>
+          <p>Frames, mempools, and state additions are evaluated against private, intermediary-free flows.</p>
+        </article>
+        <article>
+          <h3>State gets plural</h3>
+          <p>Dynamic state remains, while restrictive scalable state unlocks much lower fees for many apps.</p>
+        </article>
+        <article>
+          <h3>Formal methods everywhere</h3>
+          <p>Canonical bytecode, proof systems, and protocol components become easier to trust.</p>
+        </article>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>Draft coordination artifact, not a prediction.</span>
+      <a href="https://strawmap.org/">original strawmap</a>
+      <a href="https://ethereum.org/roadmap">ethereum.org/roadmap</a>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
