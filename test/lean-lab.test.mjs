@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   assignStateCustody,
+  buildImplementationMatrix,
   classifyStateAccess,
   createPrivateFrame,
   estimateGasVector,
@@ -10,6 +11,8 @@ import {
   proveExecution,
   runOneShotProgram,
   simulateLeanConsensus,
+  validateDependencyGraph,
+  WORKSTREAMS,
   verifyProof
 } from "../src/lean-lab.mjs";
 
@@ -88,9 +91,29 @@ test("one-shot program covers the full Lean Ethereum lab path", () => {
   const report = runOneShotProgram("test-seed");
 
   assert.equal(report.workstreams.length, 8);
+  assert.equal(report.dependencies.length >= 8, true);
+  assert.equal(report.summary.dependencyGraphValid, true);
+  assert.equal(report.summary.readinessGateCount, 8);
   assert.equal(report.proofVerified, true);
   assert.equal(report.consensus.head, "slot-1");
   assert.ok(report.summary.totalFee > 0);
   assert.ok(report.summary.stateClasses.includes("utxo"));
   assert.ok(report.summary.privateFrames >= 1);
+});
+
+test("dependency graph is acyclic and covers every workstream", () => {
+  const graph = validateDependencyGraph();
+
+  assert.equal(graph.ok, true);
+  assert.equal(graph.missing.length, 0);
+  assert.equal(graph.cycles.length, 0);
+  assert.deepEqual(new Set(graph.order), new Set(WORKSTREAMS.map((workstream) => workstream.id)));
+});
+
+test("implementation matrix gives every workstream gates and ordering", () => {
+  const matrix = buildImplementationMatrix();
+
+  assert.equal(matrix.length, WORKSTREAMS.length);
+  assert.equal(matrix.every((workstream) => workstream.gates.length >= 1), true);
+  assert.equal(matrix.every((workstream) => Number.isInteger(workstream.executionOrder)), true);
 });

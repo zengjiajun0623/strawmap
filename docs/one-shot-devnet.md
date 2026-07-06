@@ -51,11 +51,15 @@ program.
 ```sh
 npm test
 npm run simulate
+npm run inspect
 ```
 
 The simulation emits a JSON report with workstreams, private/public frames, gas
 vectors, proof inputs, finality output, state custody assignments, and summary
 metrics.
+
+The inspect command emits the dependency graph and implementation matrix. It is
+the executable version of the roadmap's "what depends on what" layer.
 
 ## Devnet principle
 

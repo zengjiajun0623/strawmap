@@ -59,6 +59,105 @@ export const WORKSTREAMS = [
   }
 ];
 
+export const DEPENDENCIES = [
+  {
+    from: "quantum-safety",
+    to: "privacy-flow",
+    reason: "Private frames must commit to hidden payloads with post-quantum-safe primitives."
+  },
+  {
+    from: "quantum-safety",
+    to: "recursive-starks",
+    reason: "Proof and blob commitments should avoid quantum-vulnerable assumptions."
+  },
+  {
+    from: "scalable-state",
+    to: "multidimensional-gas",
+    reason: "Different state classes need separate resource accounting before pricing works."
+  },
+  {
+    from: "privacy-flow",
+    to: "multidimensional-gas",
+    reason: "Private transactions add proof, bandwidth, and privacy-specific resource costs."
+  },
+  {
+    from: "vm-isa",
+    to: "recursive-starks",
+    reason: "A proof-friendly instruction trace becomes a public input to recursive verification."
+  },
+  {
+    from: "multidimensional-gas",
+    to: "client-architecture",
+    reason: "Clients need resource-vector admission, execution, and accounting boundaries."
+  },
+  {
+    from: "scalable-state",
+    to: "client-architecture",
+    reason: "State custody and serving responsibilities depend on the state type model."
+  },
+  {
+    from: "recursive-starks",
+    to: "lean-consensus",
+    reason: "Consensus can finalize proof-backed block summaries instead of replaying everything."
+  },
+  {
+    from: "client-architecture",
+    to: "lean-consensus",
+    reason: "Availability, proving, state serving, and finality need explicit client role boundaries."
+  }
+];
+
+export const READINESS_GATES = [
+  {
+    id: "g1-public-inputs",
+    workstream: "recursive-starks",
+    gate: "Block public inputs include tx root, state root, VM trace root, and parent proof hash.",
+    evidence: "proveExecution() and verifyProof()"
+  },
+  {
+    id: "g2-pq-commitments",
+    workstream: "quantum-safety",
+    gate: "Addresses and commitments use hash-based placeholder adapters.",
+    evidence: "quantumSafeAddress() and quantumSafeCommitment()"
+  },
+  {
+    id: "g3-decoupled-finality",
+    workstream: "lean-consensus",
+    gate: "Availability and finality are measured separately under quorum assumptions.",
+    evidence: "simulateLeanConsensus()"
+  },
+  {
+    id: "g4-resource-vector",
+    workstream: "multidimensional-gas",
+    gate: "Transactions produce compute, state, bandwidth, proof, and privacy resource vectors.",
+    evidence: "estimateGasVector() and priceGas()"
+  },
+  {
+    id: "g5-state-routing",
+    workstream: "scalable-state",
+    gate: "Dynamic, UTXO, ring-buffer, keyed-nonce, static, and temporary state are classifiable.",
+    evidence: "classifyStateAccess() and assignStateCustody()"
+  },
+  {
+    id: "g6-private-envelope",
+    workstream: "privacy-flow",
+    gate: "Private mempool-visible envelopes omit secrets and expose commitments/nullifiers.",
+    evidence: "createPrivateFrame()"
+  },
+  {
+    id: "g7-client-pipeline",
+    workstream: "client-architecture",
+    gate: "A full transaction path flows through state, gas, privacy, VM, proof, custody, and finality.",
+    evidence: "runOneShotProgram()"
+  },
+  {
+    id: "g8-isa-trace",
+    workstream: "vm-isa",
+    gate: "A proof-friendly instruction trace produces a deterministic trace root.",
+    evidence: "executeLeanISA()"
+  }
+];
+
 export const GAS_WEIGHTS = Object.freeze({
   compute: 1,
   stateRead: 4,
@@ -269,6 +368,52 @@ export function assignStateCustody(stateObjects, nodes, replicas = 2) {
   });
 }
 
+export function validateDependencyGraph(workstreams = WORKSTREAMS, dependencies = DEPENDENCIES) {
+  const ids = new Set(workstreams.map((workstream) => workstream.id));
+  const missing = dependencies.filter((edge) => !ids.has(edge.from) || !ids.has(edge.to));
+  if (missing.length > 0) {
+    return { ok: false, missing, cycles: [], order: [] };
+  }
+
+  const outgoing = new Map([...ids].map((id) => [id, []]));
+  const indegree = new Map([...ids].map((id) => [id, 0]));
+  for (const edge of dependencies) {
+    outgoing.get(edge.from).push(edge.to);
+    indegree.set(edge.to, indegree.get(edge.to) + 1);
+  }
+
+  const queue = [...ids].filter((id) => indegree.get(id) === 0).sort();
+  const order = [];
+  while (queue.length > 0) {
+    const id = queue.shift();
+    order.push(id);
+    for (const next of outgoing.get(id).sort()) {
+      indegree.set(next, indegree.get(next) - 1);
+      if (indegree.get(next) === 0) queue.push(next);
+    }
+    queue.sort();
+  }
+
+  const cycles = [...indegree.entries()].filter(([, degree]) => degree > 0).map(([id]) => id);
+  return { ok: missing.length === 0 && cycles.length === 0, missing, cycles, order };
+}
+
+export function buildImplementationMatrix() {
+  const graph = validateDependencyGraph();
+  return WORKSTREAMS.map((workstream) => {
+    const gates = READINESS_GATES.filter((gate) => gate.workstream === workstream.id);
+    const upstream = DEPENDENCIES.filter((edge) => edge.to === workstream.id).map((edge) => edge.from);
+    const downstream = DEPENDENCIES.filter((edge) => edge.from === workstream.id).map((edge) => edge.to);
+    return {
+      ...workstream,
+      gates,
+      upstream,
+      downstream,
+      executionOrder: graph.order.indexOf(workstream.id)
+    };
+  }).sort((left, right) => left.executionOrder - right.executionOrder);
+}
+
 export function runOneShotProgram(seed = "lean-devnet-0") {
   const validators = [
     { id: "lighthouse-pq", stake: 32, vote: "slot-1" },
@@ -343,10 +488,16 @@ export function runOneShotProgram(seed = "lean-devnet-0") {
     validators,
     2
   );
+  const dependencyGraph = validateDependencyGraph();
+  const implementationMatrix = buildImplementationMatrix();
 
   return {
     seed,
     workstreams: WORKSTREAMS,
+    dependencies: DEPENDENCIES,
+    readinessGates: READINESS_GATES,
+    dependencyGraph,
+    implementationMatrix,
     transactions: transactions.map(({ secret, ...transaction }) => transaction),
     frames,
     gas,
@@ -360,7 +511,9 @@ export function runOneShotProgram(seed = "lean-devnet-0") {
       totalFee: gas.reduce((sum, item) => sum + item.fee, 0),
       finalHead: consensus.head,
       privateFrames: frames.filter((frame) => frame.kind === "private-frame").length,
-      stateClasses: [...new Set(gas.map((item) => item.stateClass))]
+      stateClasses: [...new Set(gas.map((item) => item.stateClass))],
+      dependencyGraphValid: dependencyGraph.ok,
+      readinessGateCount: READINESS_GATES.length
     }
   };
 }
