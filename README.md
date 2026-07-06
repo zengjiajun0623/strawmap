@@ -4,6 +4,8 @@ An interactive public roadmap product for Lean Ethereum, built as a dense
 coordination artifact for researchers, app developers, and Ethereum governance
 participants.
 
+Live site: <https://zengjiajun0623.github.io/strawmap/>
+
 The map keeps the spirit of [strawmap.org](https://strawmap.org/): a technical,
 multi-year L1 roadmap with Consensus, Data, and Execution layers, dependency
 arrows, headliners, and north stars. It foregrounds the themes from
