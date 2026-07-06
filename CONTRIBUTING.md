@@ -26,4 +26,5 @@ contributions make the Lean Ethereum roadmap more executable.
 npm test
 npm run simulate
 npm run inspect
+npm run spec
 ```

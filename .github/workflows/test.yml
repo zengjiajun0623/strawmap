@@ -16,3 +16,4 @@ jobs:
       - run: npm test
       - run: npm run simulate
       - run: npm run inspect
+      - run: npm run spec

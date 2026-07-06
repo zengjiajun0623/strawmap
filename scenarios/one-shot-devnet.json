@@ -1,0 +1,60 @@
+{
+  "schema": "lean-scenario-v0",
+  "id": "one-shot-devnet",
+  "name": "One-shot Lean Ethereum devnet",
+  "seed": "lean-devnet-0",
+  "quorum": 0.67,
+  "replicas": 2,
+  "validators": [
+    { "id": "lighthouse-pq", "stake": 32, "vote": "slot-1" },
+    { "id": "teku-pq", "stake": 32, "vote": "slot-1" },
+    { "id": "nimbus-pq", "stake": 32, "vote": "slot-1" },
+    { "id": "reth-proof", "stake": 32, "vote": "slot-1" },
+    { "id": "erigon-state", "stake": 16, "vote": "slot-1", "available": true }
+  ],
+  "transactions": [
+    {
+      "id": "erc20-utxo-transfer",
+      "from": "alice",
+      "to": "bob",
+      "nonce": 1,
+      "secret": "alice-note",
+      "private": true,
+      "requiresProof": true,
+      "stateAccess": { "shape": "utxo" },
+      "compute": 18,
+      "reads": 2,
+      "writes": 2
+    },
+    {
+      "id": "uniswap-dynamic-swap",
+      "from": "carol",
+      "nonce": 7,
+      "private": false,
+      "requiresProof": true,
+      "stateAccess": { "shape": "dynamic" },
+      "compute": 45,
+      "reads": 8,
+      "writes": 5
+    },
+    {
+      "id": "rollup-blob-sample",
+      "from": "rollup-a",
+      "nonce": 3,
+      "private": false,
+      "requiresProof": true,
+      "stateAccess": { "shape": "ring-buffer" },
+      "compute": 14,
+      "reads": 1,
+      "writes": 1
+    }
+  ],
+  "assertions": {
+    "proofVerified": true,
+    "dependencyGraphValid": true,
+    "finalHead": "slot-1",
+    "minPrivateFrames": 1,
+    "includesStateClasses": ["utxo", "dynamic", "ring-buffer"],
+    "maxTotalFee": 1000
+  }
+}

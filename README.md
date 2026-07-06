@@ -25,6 +25,8 @@ Runnable artifacts:
 - `src/lean-lab.mjs`: one-shot prototype engine
 - `bin/simulate.mjs`: simulation CLI
 - `bin/inspect.mjs`: dependency graph and implementation matrix CLI
+- `bin/spec.mjs`: executable scenario spec runner
+- `scenarios/*.json`: named devnet scenarios and expected assertions
 - `test/lean-lab.test.mjs`: test vectors for the prototype
 - `docs/one-shot-devnet.md`: research/devnet implementation plan
 - `.github/workflows/test.yml`: public CI for tests and executable specs
@@ -59,7 +61,10 @@ Run the one-shot implementation lab:
 npm test
 npm run simulate
 npm run inspect
+npm run spec
 ```
+
+Use `npm run spec -- --full` to print full scenario reports.
 
 ## Deploy
 

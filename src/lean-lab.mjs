@@ -158,6 +158,8 @@ export const READINESS_GATES = [
   }
 ];
 
+export const SCENARIO_SCHEMA_VERSION = "lean-scenario-v0";
+
 export const GAS_WEIGHTS = Object.freeze({
   compute: 1,
   stateRead: 4,
@@ -368,6 +370,206 @@ export function assignStateCustody(stateObjects, nodes, replicas = 2) {
   });
 }
 
+export function createDefaultScenario(seed = "lean-devnet-0") {
+  return {
+    schema: SCENARIO_SCHEMA_VERSION,
+    id: "one-shot-devnet",
+    name: "One-shot Lean Ethereum devnet",
+    seed,
+    quorum: 0.67,
+    replicas: 2,
+    validators: [
+      { id: "lighthouse-pq", stake: 32, vote: "slot-1" },
+      { id: "teku-pq", stake: 32, vote: "slot-1" },
+      { id: "nimbus-pq", stake: 32, vote: "slot-1" },
+      { id: "reth-proof", stake: 32, vote: "slot-1" },
+      { id: "erigon-state", stake: 16, vote: "slot-1", available: true }
+    ],
+    transactions: [
+      {
+        id: "erc20-utxo-transfer",
+        from: "alice",
+        to: "bob",
+        nonce: 1,
+        secret: "alice-note",
+        private: true,
+        requiresProof: true,
+        stateAccess: { shape: "utxo" },
+        compute: 18,
+        reads: 2,
+        writes: 2
+      },
+      {
+        id: "uniswap-dynamic-swap",
+        from: "carol",
+        nonce: 7,
+        private: false,
+        requiresProof: true,
+        stateAccess: { shape: "dynamic" },
+        compute: 45,
+        reads: 8,
+        writes: 5
+      },
+      {
+        id: "rollup-blob-sample",
+        from: "rollup-a",
+        nonce: 3,
+        private: false,
+        requiresProof: true,
+        stateAccess: { shape: "ring-buffer" },
+        compute: 14,
+        reads: 1,
+        writes: 1
+      }
+    ],
+    assertions: {
+      proofVerified: true,
+      dependencyGraphValid: true,
+      finalHead: "slot-1",
+      minPrivateFrames: 1,
+      includesStateClasses: ["utxo", "dynamic", "ring-buffer"],
+      maxTotalFee: 1000
+    }
+  };
+}
+
+export function validateScenario(scenario) {
+  const errors = [];
+  if (scenario?.schema !== SCENARIO_SCHEMA_VERSION) {
+    errors.push(`schema must be ${SCENARIO_SCHEMA_VERSION}`);
+  }
+  if (!scenario?.id) errors.push("id is required");
+  if (!Array.isArray(scenario?.validators) || scenario.validators.length === 0) {
+    errors.push("validators must be a non-empty array");
+  }
+  if (!Array.isArray(scenario?.transactions) || scenario.transactions.length === 0) {
+    errors.push("transactions must be a non-empty array");
+  }
+
+  for (const validator of scenario?.validators ?? []) {
+    if (!validator.id) errors.push("validator.id is required");
+    if (!(validator.stake > 0)) errors.push(`validator ${validator.id ?? "<unknown>"} needs positive stake`);
+  }
+
+  for (const transaction of scenario?.transactions ?? []) {
+    if (!transaction.id) errors.push("transaction.id is required");
+    if (!transaction.stateAccess) errors.push(`transaction ${transaction.id ?? "<unknown>"} needs stateAccess`);
+    if (transaction.private && !transaction.secret) {
+      errors.push(`private transaction ${transaction.id} needs a secret for nullifier construction`);
+    }
+  }
+
+  return { ok: errors.length === 0, errors };
+}
+
+export function runScenarioSpec(scenario) {
+  const validation = validateScenario(scenario);
+  if (!validation.ok) {
+    return { scenarioId: scenario?.id ?? null, validation, ok: false, failures: validation.errors };
+  }
+
+  const seed = scenario.seed ?? scenario.id;
+  const frames = scenario.transactions.map(createPrivateFrame);
+  const gas = scenario.transactions.map((transaction) => {
+    const vector = estimateGasVector(transaction);
+    return { id: transaction.id, stateClass: classifyStateAccess(transaction.stateAccess), vector, fee: priceGas(vector) };
+  });
+  const totalFee = gas.reduce((sum, item) => sum + item.fee, 0);
+  const isa = executeLeanISA(scenario.program ?? defaultLeanISAProgram(seed, totalFee), { blockGas: 0 });
+  const block = {
+    id: scenario.blockId ?? "slot-1",
+    number: scenario.blockNumber ?? 1,
+    transactions: frames.map((frame) => frame.visible),
+    stateRoot: merkleRoot(gas)
+  };
+  const proof = proveExecution({ block, vmTraceRoot: isa.traceRoot });
+  const consensus = simulateLeanConsensus({
+    validators: scenario.validators,
+    blocks: [block],
+    quorum: scenario.quorum ?? 0.67
+  });
+  const custody = assignStateCustody(
+    scenario.transactions.map((transaction) => ({ id: transaction.id, access: transaction.stateAccess })),
+    scenario.validators,
+    scenario.replicas ?? 2
+  );
+  const dependencyGraph = validateDependencyGraph();
+  const implementationMatrix = buildImplementationMatrix();
+  const summary = {
+    totalFee,
+    finalHead: consensus.head,
+    privateFrames: frames.filter((frame) => frame.kind === "private-frame").length,
+    stateClasses: [...new Set(gas.map((item) => item.stateClass))],
+    dependencyGraphValid: dependencyGraph.ok,
+    readinessGateCount: READINESS_GATES.length
+  };
+  const report = {
+    scenario: {
+      id: scenario.id,
+      name: scenario.name ?? scenario.id,
+      seed,
+      assertions: scenario.assertions ?? {}
+    },
+    validation,
+    workstreams: WORKSTREAMS,
+    dependencies: DEPENDENCIES,
+    readinessGates: READINESS_GATES,
+    dependencyGraph,
+    implementationMatrix,
+    transactions: scenario.transactions.map(({ secret, ...transaction }) => transaction),
+    frames,
+    gas,
+    isa,
+    block,
+    proof,
+    proofVerified: verifyProof(proof),
+    consensus,
+    custody,
+    summary
+  };
+
+  const assertions = evaluateScenarioAssertions(report, scenario.assertions ?? {});
+  return { ...report, assertions, ok: assertions.ok };
+}
+
+export function evaluateScenarioAssertions(report, assertions) {
+  const checks = [];
+  const addCheck = (id, pass, actual, expected) => {
+    checks.push({ id, pass, actual, expected });
+  };
+
+  if ("proofVerified" in assertions) addCheck("proofVerified", report.proofVerified === assertions.proofVerified, report.proofVerified, assertions.proofVerified);
+  if ("dependencyGraphValid" in assertions) {
+    addCheck("dependencyGraphValid", report.summary.dependencyGraphValid === assertions.dependencyGraphValid, report.summary.dependencyGraphValid, assertions.dependencyGraphValid);
+  }
+  if ("finalHead" in assertions) addCheck("finalHead", report.summary.finalHead === assertions.finalHead, report.summary.finalHead, assertions.finalHead);
+  if ("minPrivateFrames" in assertions) {
+    addCheck("minPrivateFrames", report.summary.privateFrames >= assertions.minPrivateFrames, report.summary.privateFrames, `>= ${assertions.minPrivateFrames}`);
+  }
+  if ("maxTotalFee" in assertions) addCheck("maxTotalFee", report.summary.totalFee <= assertions.maxTotalFee, report.summary.totalFee, `<= ${assertions.maxTotalFee}`);
+  for (const stateClass of assertions.includesStateClasses ?? []) {
+    addCheck(`includesStateClass:${stateClass}`, report.summary.stateClasses.includes(stateClass), report.summary.stateClasses, stateClass);
+  }
+
+  return {
+    ok: checks.every((check) => check.pass),
+    checks,
+    failures: checks.filter((check) => !check.pass)
+  };
+}
+
+export function defaultLeanISAProgram(seed, totalFee) {
+  return [
+    ["PUSH", seed],
+    ["HASH"],
+    ["STORE", "devnetSeed"],
+    ["LOAD", "blockGas"],
+    ["PUSH", totalFee],
+    "ADD",
+    ["STORE", "accountedGas"]
+  ];
+}
+
 export function validateDependencyGraph(workstreams = WORKSTREAMS, dependencies = DEPENDENCIES) {
   const ids = new Set(workstreams.map((workstream) => workstream.id));
   const missing = dependencies.filter((edge) => !ids.has(edge.from) || !ids.has(edge.to));
@@ -415,107 +617,8 @@ export function buildImplementationMatrix() {
 }
 
 export function runOneShotProgram(seed = "lean-devnet-0") {
-  const validators = [
-    { id: "lighthouse-pq", stake: 32, vote: "slot-1" },
-    { id: "teku-pq", stake: 32, vote: "slot-1" },
-    { id: "nimbus-pq", stake: 32, vote: "slot-1" },
-    { id: "reth-proof", stake: 32, vote: "slot-1" },
-    { id: "erigon-state", stake: 16, vote: "slot-1", available: true }
-  ];
-
-  const transactions = [
-    {
-      id: "erc20-utxo-transfer",
-      from: "alice",
-      to: "bob",
-      nonce: 1,
-      secret: "alice-note",
-      private: true,
-      requiresProof: true,
-      stateAccess: { shape: "utxo" },
-      compute: 18,
-      reads: 2,
-      writes: 2
-    },
-    {
-      id: "uniswap-dynamic-swap",
-      from: "carol",
-      nonce: 7,
-      private: false,
-      requiresProof: true,
-      stateAccess: { shape: "dynamic" },
-      compute: 45,
-      reads: 8,
-      writes: 5
-    },
-    {
-      id: "rollup-blob-sample",
-      from: "rollup-a",
-      nonce: 3,
-      private: false,
-      requiresProof: true,
-      stateAccess: { shape: "ring-buffer" },
-      compute: 14,
-      reads: 1,
-      writes: 1
-    }
-  ];
-
-  const frames = transactions.map(createPrivateFrame);
-  const gas = transactions.map((transaction) => {
-    const vector = estimateGasVector(transaction);
-    return { id: transaction.id, stateClass: classifyStateAccess(transaction.stateAccess), vector, fee: priceGas(vector) };
-  });
-  const isa = executeLeanISA([
-    ["PUSH", seed],
-    ["HASH"],
-    ["STORE", "devnetSeed"],
-    ["LOAD", "blockGas"],
-    ["PUSH", gas.reduce((sum, item) => sum + item.fee, 0)],
-    "ADD",
-    ["STORE", "accountedGas"]
-  ], { blockGas: 0 });
-  const block = {
-    id: "slot-1",
-    number: 1,
-    transactions: frames.map((frame) => frame.visible),
-    stateRoot: merkleRoot(gas)
-  };
-  const proof = proveExecution({ block, vmTraceRoot: isa.traceRoot });
-  const consensus = simulateLeanConsensus({ validators, blocks: [block] });
-  const custody = assignStateCustody(
-    transactions.map((transaction) => ({ id: transaction.id, access: transaction.stateAccess })),
-    validators,
-    2
-  );
-  const dependencyGraph = validateDependencyGraph();
-  const implementationMatrix = buildImplementationMatrix();
-
-  return {
-    seed,
-    workstreams: WORKSTREAMS,
-    dependencies: DEPENDENCIES,
-    readinessGates: READINESS_GATES,
-    dependencyGraph,
-    implementationMatrix,
-    transactions: transactions.map(({ secret, ...transaction }) => transaction),
-    frames,
-    gas,
-    isa,
-    block,
-    proof,
-    proofVerified: verifyProof(proof),
-    consensus,
-    custody,
-    summary: {
-      totalFee: gas.reduce((sum, item) => sum + item.fee, 0),
-      finalHead: consensus.head,
-      privateFrames: frames.filter((frame) => frame.kind === "private-frame").length,
-      stateClasses: [...new Set(gas.map((item) => item.stateClass))],
-      dependencyGraphValid: dependencyGraph.ok,
-      readinessGateCount: READINESS_GATES.length
-    }
-  };
+  const report = runScenarioSpec(createDefaultScenario(seed));
+  return { seed, ...report };
 }
 
 function round(value) {

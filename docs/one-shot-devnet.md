@@ -52,6 +52,7 @@ program.
 npm test
 npm run simulate
 npm run inspect
+npm run spec
 ```
 
 The simulation emits a JSON report with workstreams, private/public frames, gas
@@ -60,6 +61,12 @@ metrics.
 
 The inspect command emits the dependency graph and implementation matrix. It is
 the executable version of the roadmap's "what depends on what" layer.
+
+The spec command executes every JSON scenario in `scenarios/`. A scenario is a
+portable devnet fixture: validator set, transaction mix, quorum, custody
+replicas, and expected assertions. Add a scenario when a roadmap claim needs a
+named test case that contributors can inspect and extend. Use
+`npm run spec -- --full` when you need the full report for every scenario.
 
 ## Devnet principle
 

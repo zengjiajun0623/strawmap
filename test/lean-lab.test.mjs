@@ -6,9 +6,11 @@ import {
   classifyStateAccess,
   createPrivateFrame,
   estimateGasVector,
+  evaluateScenarioAssertions,
   executeLeanISA,
   priceGas,
   proveExecution,
+  runScenarioSpec,
   runOneShotProgram,
   simulateLeanConsensus,
   validateDependencyGraph,
@@ -99,6 +101,63 @@ test("one-shot program covers the full Lean Ethereum lab path", () => {
   assert.ok(report.summary.totalFee > 0);
   assert.ok(report.summary.stateClasses.includes("utxo"));
   assert.ok(report.summary.privateFrames >= 1);
+});
+
+test("scenario specs execute named devnet assertions", () => {
+  const report = runScenarioSpec({
+    schema: "lean-scenario-v0",
+    id: "unit-scenario",
+    validators: [
+      { id: "a", stake: 34, vote: "slot-1" },
+      { id: "b", stake: 33, vote: "slot-1" },
+      { id: "c", stake: 33, vote: "slot-2" }
+    ],
+    transactions: [
+      {
+        id: "private-utxo",
+        from: "alice",
+        to: "bob",
+        nonce: 1,
+        secret: "note",
+        private: true,
+        requiresProof: true,
+        stateAccess: { shape: "utxo" }
+      }
+    ],
+    assertions: {
+      proofVerified: true,
+      dependencyGraphValid: true,
+      finalHead: "slot-1",
+      minPrivateFrames: 1,
+      includesStateClasses: ["utxo"]
+    }
+  });
+
+  assert.equal(report.ok, true);
+  assert.equal(report.assertions.failures.length, 0);
+});
+
+test("scenario assertion evaluator reports failures explicitly", () => {
+  const result = evaluateScenarioAssertions(
+    {
+      proofVerified: true,
+      summary: {
+        dependencyGraphValid: true,
+        finalHead: null,
+        privateFrames: 0,
+        totalFee: 10,
+        stateClasses: ["dynamic"]
+      }
+    },
+    {
+      finalHead: "slot-1",
+      minPrivateFrames: 1,
+      includesStateClasses: ["utxo"]
+    }
+  );
+
+  assert.equal(result.ok, false);
+  assert.equal(result.failures.length, 3);
 });
 
 test("dependency graph is acyclic and covers every workstream", () => {

@@ -1,0 +1,48 @@
+{
+  "schema": "lean-scenario-v0",
+  "id": "adversarial-finality",
+  "name": "Availability without finality",
+  "seed": "lean-devnet-adversarial-0",
+  "quorum": 0.67,
+  "replicas": 2,
+  "validators": [
+    { "id": "lighthouse-pq", "stake": 40, "vote": "slot-2" },
+    { "id": "teku-pq", "stake": 30, "vote": "slot-1" },
+    { "id": "nimbus-pq", "stake": 20, "vote": "slot-2" },
+    { "id": "reth-proof", "stake": 10, "vote": "slot-1" }
+  ],
+  "transactions": [
+    {
+      "id": "keyed-nonce-transfer",
+      "from": "dora",
+      "to": "erin",
+      "nonce": 11,
+      "private": false,
+      "requiresProof": true,
+      "stateAccess": { "keyedNonce": true },
+      "compute": 12,
+      "reads": 1,
+      "writes": 1
+    },
+    {
+      "id": "temporary-privacy-session",
+      "from": "frank",
+      "nonce": 12,
+      "secret": "session-note",
+      "private": true,
+      "requiresProof": true,
+      "stateAccess": { "scope": "temporary" },
+      "compute": 20,
+      "reads": 1,
+      "writes": 3
+    }
+  ],
+  "assertions": {
+    "proofVerified": true,
+    "dependencyGraphValid": true,
+    "finalHead": null,
+    "minPrivateFrames": 1,
+    "includesStateClasses": ["keyed-nonce", "temp"],
+    "maxTotalFee": 700
+  }
+}
