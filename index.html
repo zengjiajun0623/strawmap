@@ -8,6 +8,15 @@
       name="description"
       content="An interactive Lean Ethereum strawmap inspired by Ethereum's updated L1 roadmap and Vitalik Buterin's July 2026 notes."
     >
+    <meta name="theme-color" content="#f8f7f3">
+    <meta property="og:title" content="Lean Ethereum Strawmap">
+    <meta
+      property="og:description"
+      content="A dense interactive roadmap for recursive STARKs, quantum safety, privacy, scalable state, and the Lean Ethereum transition."
+    >
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="./styles.css">
   </head>
   <body>
@@ -87,7 +96,10 @@
               <strong>Fork timeline</strong>
               <span>Glamsterdam through north stars</span>
             </div>
-            <button id="resetButton" class="utility-button" type="button">Reset view</button>
+            <div class="map-actions">
+              <button id="focusLeanButton" class="utility-button" type="button">Lean path</button>
+              <button id="resetButton" class="utility-button" type="button">Reset view</button>
+            </div>
           </div>
 
           <div class="roadmap-wrap" id="roadmapWrap">
@@ -116,6 +128,22 @@
           <h3>Formal methods everywhere</h3>
           <p>Canonical bytecode, proof systems, and protocol components become easier to trust.</p>
         </article>
+      </section>
+
+      <section class="source-notes" aria-labelledby="source-notes-title">
+        <h2 id="source-notes-title">How to read this draft</h2>
+        <p>
+          This map is a public product sketch, not an official Ethereum roadmap. It keeps
+          the original strawmap's CL, DL, EL layer model and north-star framing, then
+          foregrounds the Lean Ethereum themes from Vitalik's July 4, 2026 thread.
+        </p>
+        <div class="legend" aria-label="Roadmap legend">
+          <span><i class="legend-chip cl"></i>Consensus</span>
+          <span><i class="legend-chip dl"></i>Data</span>
+          <span><i class="legend-chip el"></i>Execution</span>
+          <span><i class="legend-chip cross"></i>Cross-layer</span>
+          <span><i class="legend-chip north"></i>North star</span>
+        </div>
       </section>
     </main>
 

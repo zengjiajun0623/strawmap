@@ -354,6 +354,7 @@ const roadmap = document.querySelector("#roadmap");
 const dependencyLayer = document.querySelector("#dependencyLayer");
 const searchInput = document.querySelector("#searchInput");
 const resetButton = document.querySelector("#resetButton");
+const focusLeanButton = document.querySelector("#focusLeanButton");
 const detailTitle = document.querySelector("#detailTitle");
 const detailBody = document.querySelector("#detailBody");
 const detailLayer = document.querySelector("#detailLayer");
@@ -427,7 +428,8 @@ function drawDependencies() {
   });
 }
 
-function selectNode(id) {
+function selectNode(id, options = {}) {
+  const shouldFocusRelations = options.focusRelations !== false;
   selectedId = id;
   const node = nodes.find((item) => item.id === id);
   if (!node) return;
@@ -450,12 +452,14 @@ function selectNode(id) {
 
   document.querySelectorAll(".dependency-layer path").forEach((path) => {
     const isRelated = path.dataset.from === id || path.dataset.to === id;
-    path.setAttribute("stroke", isRelated ? "#111" : "rgba(50, 56, 65, 0.18)");
-    path.setAttribute("stroke-width", isRelated ? "3" : "1.5");
+    const stroke = shouldFocusRelations && isRelated ? "#111" : "rgba(50, 56, 65, 0.34)";
+    const strokeWidth = shouldFocusRelations && isRelated ? "3" : "2";
+    path.setAttribute("stroke", stroke);
+    path.setAttribute("stroke-width", strokeWidth);
   });
 
   document.querySelectorAll(".node-card").forEach((card) => {
-    card.classList.toggle("dimmed", !related.has(card.id));
+    card.classList.toggle("dimmed", shouldFocusRelations && !related.has(card.id));
   });
 }
 
@@ -494,10 +498,20 @@ resetButton.addEventListener("click", () => {
   document.querySelectorAll(".node-card").forEach((card) => {
     card.classList.remove("dimmed", "hidden-by-query");
   });
+  selectNode("recursive-starks", { focusRelations: false });
+});
+
+focusLeanButton.addEventListener("click", () => {
+  document.querySelectorAll(".segment").forEach((segment) => {
+    segment.classList.toggle("active", segment.dataset.filter === "lean");
+  });
+  activeFilter = "lean";
+  searchInput.value = "";
+  applyFilters();
   selectNode("recursive-starks");
 });
 
 renderBase();
 renderNodes();
 drawDependencies();
-selectNode(selectedId);
+selectNode(selectedId, { focusRelations: false });
