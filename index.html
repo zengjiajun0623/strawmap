@@ -26,7 +26,7 @@
         <span>lean.strawmap</span>
       </a>
       <div class="header-meta">
-        <span>updated from Vitalik's Jul 4, 2026 thread</span>
+        <span>one-shot Lean Ethereum implementation lab</span>
         <a href="https://x.com/VitalikButerin/status/2073459000398463446">source post</a>
       </div>
     </header>
@@ -37,8 +37,9 @@
           <p class="kicker">Ethereum's third major iteration</p>
           <h1 id="page-title">Lean Ethereum as a living protocol map.</h1>
           <p>
-            A one-screen upgrade that reframes the L1 strawmap around recursive STARKs,
-            quantum safety, privacy, new state types, and faster consensus.
+            A runnable one-shot lab that turns the L1 strawmap into executable
+            prototypes for recursive STARKs, quantum safety, privacy, state,
+            gas, consensus, clients, and VM evolution.
           </p>
         </div>
         <div class="north-stars" aria-label="Roadmap north stars">
@@ -110,32 +111,55 @@
         </div>
       </section>
 
+      <section class="lab-panel" aria-labelledby="lab-title">
+        <div class="lab-copy">
+          <p class="panel-eyebrow">Implementation lab</p>
+          <h2 id="lab-title">Compress the roadmap into a devnet program.</h2>
+          <p>
+            This repo now includes a Node-based prototype pipeline: private
+            transaction frames, multidimensional gas, scalable state routing,
+            leanISA traces, recursive-proof placeholders, state custody, and
+            decoupled availability/finality simulation.
+          </p>
+        </div>
+        <div class="lab-commands" aria-label="Runnable commands">
+          <code>npm test</code>
+          <code>npm run simulate</code>
+        </div>
+        <div class="lab-links">
+          <a href="https://github.com/zengjiajun0623/strawmap/blob/main/src/lean-lab.mjs">prototype engine</a>
+          <a href="https://github.com/zengjiajun0623/strawmap/blob/main/test/lean-lab.test.mjs">test vectors</a>
+          <a href="https://github.com/zengjiajun0623/strawmap/blob/main/docs/one-shot-devnet.md">devnet plan</a>
+        </div>
+      </section>
+
       <section class="takeaways" aria-labelledby="takeaways-title">
-        <h2 id="takeaways-title">Lean priorities</h2>
+        <h2 id="takeaways-title">Prototype coverage</h2>
         <article>
-          <h3>No one-shot fork</h3>
-          <p>Lean Ethereum is a three-to-four-year sequence, not a single switch.</p>
+          <h3>Proof pipeline</h3>
+          <p>Blocks expose public inputs and tamper-detecting recursive proof placeholders.</p>
         </article>
         <article>
-          <h3>Privacy by design</h3>
-          <p>Frames, mempools, and state additions are evaluated against private, intermediary-free flows.</p>
+          <h3>Privacy by construction</h3>
+          <p>Private frames hide secrets while preserving commitments and public resource vectors.</p>
         </article>
         <article>
-          <h3>State gets plural</h3>
-          <p>Dynamic state remains, while restrictive scalable state unlocks much lower fees for many apps.</p>
+          <h3>State gets executable</h3>
+          <p>Dynamic, UTXO, ring-buffer, keyed-nonce, static, and temporary state route separately.</p>
         </article>
         <article>
-          <h3>Formal methods everywhere</h3>
-          <p>Canonical bytecode, proof systems, and protocol components become easier to trust.</p>
+          <h3>Consensus is simulated</h3>
+          <p>Availability and finality are separated, measured, and tested under quorum assumptions.</p>
         </article>
       </section>
 
       <section class="source-notes" aria-labelledby="source-notes-title">
         <h2 id="source-notes-title">How to read this draft</h2>
         <p>
-          This map is a public product sketch, not an official Ethereum roadmap. It keeps
-          the original strawmap's CL, DL, EL layer model and north-star framing, then
-          foregrounds the Lean Ethereum themes from Vitalik's July 4, 2026 thread.
+          This lab is not an Ethereum mainnet upgrade. It keeps the original
+          strawmap's CL, DL, EL layer model and north-star framing, then turns
+          Vitalik's July 4, 2026 Lean Ethereum themes into small executable
+          artifacts that can grow into a serious research/devnet program.
         </p>
         <div class="legend" aria-label="Roadmap legend">
           <span><i class="legend-chip cl"></i>Consensus</span>

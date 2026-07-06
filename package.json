@@ -1,0 +1,19 @@
+{
+  "name": "lean-ethereum-strawmap-lab",
+  "version": "0.1.0",
+  "description": "A runnable one-shot Lean Ethereum prototype lab attached to the interactive strawmap.",
+  "type": "module",
+  "private": false,
+  "scripts": {
+    "simulate": "node bin/simulate.mjs",
+    "test": "node --test"
+  },
+  "keywords": [
+    "ethereum",
+    "lean-ethereum",
+    "roadmap",
+    "prototype",
+    "strawmap"
+  ],
+  "license": "MIT"
+}

@@ -1,8 +1,8 @@
-# Lean Ethereum Strawmap
+# Lean Ethereum Strawmap Lab
 
-An interactive public roadmap product for Lean Ethereum, built as a dense
-coordination artifact for researchers, app developers, and Ethereum governance
-participants.
+An interactive public roadmap and runnable implementation lab for Lean Ethereum,
+built as a dense coordination artifact for researchers, app developers, client
+teams, and Ethereum governance participants.
 
 Live site: <https://zengjiajun0623.github.io/strawmap/>
 
@@ -13,9 +13,34 @@ arrows, headliners, and north stars. It foregrounds the themes from
 recursive STARK verification, quantum safety, privacy as a first-class goal,
 multidimensional gas, scalable state types, and VM/ISA evolution.
 
+The lab intentionally does not pretend to upgrade Ethereum mainnet. It builds
+the most concrete one-shot prototype package possible inside this repo:
+executable specs, simulations, test vectors, and developer-facing docs that
+show how the roadmap could become an aggressive research/devnet program.
+
+## Implementation lab
+
+Runnable artifacts:
+
+- `src/lean-lab.mjs`: one-shot prototype engine
+- `bin/simulate.mjs`: simulation CLI
+- `test/lean-lab.test.mjs`: test vectors for the prototype
+- `docs/one-shot-devnet.md`: research/devnet implementation plan
+
+Covered workstreams:
+
+- recursive STARK verification placeholder and proof verification
+- quantum-safe hash commitments and addresses
+- lean consensus availability/finality simulation
+- multidimensional gas pricing
+- scalable state classification and custody assignment
+- privacy-friendly private transaction frames
+- client pipeline orchestration
+- proof-friendly leanISA micro-interpreter
+
 ## Run locally
 
-No install step is required.
+No dependency install step is required.
 
 ```sh
 python3 -m http.server 4173
@@ -26,11 +51,18 @@ Then open <http://localhost:4173/>.
 You can also open `index.html` directly in a browser, but a local server is the
 best preview path because it matches static hosting behavior.
 
+Run the one-shot implementation lab:
+
+```sh
+npm test
+npm run simulate
+```
+
 ## Deploy
 
-This repo is static: `index.html`, `styles.css`, `app.js`, and `favicon.svg`.
-It can be deployed from the repository root with GitHub Pages, Netlify, Vercel,
-Cloudflare Pages, or any static host.
+The public site is static and can be deployed from the repository root with
+GitHub Pages, Netlify, Vercel, Cloudflare Pages, or any static host. The lab
+scripts run locally with Node.js.
 
 For GitHub Pages, use:
 
@@ -46,3 +78,5 @@ For GitHub Pages, use:
   make the map easier to inspect without hiding technical structure.
 - Public copy should treat the map as a draft coordination artifact, not an
   official prediction.
+- Runnable artifacts should turn roadmap claims into data structures,
+  simulators, verifiers, test vectors, or documented interfaces.
